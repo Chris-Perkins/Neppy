@@ -1,0 +1,9 @@
+# Local Dev Files
+__pycache__/
+src/neppy.egg-info/
+venv/
+.DS_Store
+
+# Secrets
+__secrets__/
+__neppycache__/
