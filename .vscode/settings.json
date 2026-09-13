@@ -3,12 +3,13 @@
         "editor.formatOnSave": true,
         "editor.defaultFormatter": "charliermarsh.ruff",
         "editor.codeActionsOnSave": {
-            "source.fixAll": "explicit"
+            "source.fixAll": "explicit",
+            "source.organizeImports": "explicit"
         }
     },
     "python-envs.pythonProjects": [
         {
-            "path": "neppy",
+            "path": "src/neppy",
             "envManager": "ms-python.python:venv",
             "packageManager": "ms-python.python:pip"
         }

@@ -5,11 +5,15 @@
     "version": "0.1.0",
     "configurations": [
         {
-            "name": "Run",
+            "name": "Run Neppy",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/neppy/main.py",
-            "console": "integratedTerminal"
-        }
+            "program": "${workspaceFolder}/src/neppy/main.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+        },
     ]
 }
