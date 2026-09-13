@@ -1,4 +1,25 @@
-"""Caching utilities for Neppy."""
+"""Caching utilities for Neppy.
+
+Caches in Neppy are backed by local filestorage, and are
+persistent across multiple sessions.
+
+Example: Manual Caching
+    ```py
+    set_cached_value("item", "Hand of A'dal")
+    get_cached_value("item") # returns "Hand of A'dal"
+    ```
+
+Example: Automatic Function Caching
+    ```py
+    @cached
+    def expensive_operation(...) -> str:
+        time.sleep(1_000)
+        return "cat"
+
+    expensive_operation() # Function executes, returns "cat"
+    expensive_operation() # Function does not execute, returns "cat" from previous run
+    ```
+"""
 
 from pathlib import Path
 from typing import Callable
