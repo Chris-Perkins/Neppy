@@ -2,7 +2,7 @@
 
 import datetime as dt
 
-from utils import neppy_dataclass
+from neppy.utils.dataclasses import neppy_dataclass
 
 
 @neppy_dataclass

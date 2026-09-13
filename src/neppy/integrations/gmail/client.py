@@ -9,8 +9,8 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from requests import Request
 
-from neppy.caching import get_cached_value, set_cached_value
 from neppy.exceptions import InternalException
+from neppy.utils.caching import get_cached_value, set_cached_value
 import neppy.config
 
 from .types import ListMessagesOptions, ListMessagesResult, Message
