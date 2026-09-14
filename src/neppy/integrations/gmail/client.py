@@ -14,7 +14,7 @@ from neppy.exceptions import InternalException
 from neppy.utils.caching import get_cached_value, set_cached_value
 import neppy.config
 
-from .types import CreateDraftMessageResponse, Label, ListMessagesOptions, ListMessagesResult, Message
+from .types import CreateDraftMessageResponse, Label, ListThreadsOptions, ListThreadsResult, Message, Thread
 
 _REQUIRED_SCOPES = [
     "https://www.googleapis.com/auth/gmail.modify",
@@ -33,31 +33,70 @@ class NeppyGmailClient:
         google_credentials = _generate_google_credentials(_REQUIRED_SCOPES)
         self._gmail_client = build("gmail", "v1", credentials=google_credentials)
 
-    def list_messages(
+    def list_threads(
         self,
-        options: ListMessagesOptions | None = None,
+        options: ListThreadsOptions | None = None,
         *,
         page_token: str | None = None,
-    ) -> ListMessagesResult:
-        """Returns Gmail messages matching the input parameters.
+    ) -> ListThreadsResult:
+        """Returns Gmail threads matching the input parameters.
 
         Args:
             options (ListGmailMessagesOptions, optional): Used to filter which messages are read. If not specified, default filters are applied.
             page_token (str, optional): Used to fetch the next page of messages.
         """
-        searchQuery = _convert_list_messages_options_to_search_query(options or ListMessagesOptions())
-        results = self._gmail_client.users().messages().list(userId="me", q=searchQuery, maxResults=20, pageToken=page_token).execute()
+        searchQuery = _convert_list_threads_options_to_search_query(options or ListThreadsOptions())
+        results = self._gmail_client.users().threads().list(userId="me", q=searchQuery, maxResults=20, pageToken=page_token).execute()
 
-        try:
-            result_message_summaries = results["messages"]
-            result_message_ids: list[str] = [message["id"] for message in result_message_summaries]
-            result_next_page_token: str | None = results.get("nextPageToken")
-        except KeyError as e:
-            raise InternalException("Reading Gmail messages failed: an expected field was missing") from e
+        result_threads: list[dict] = results["threads"]
+        thread_ids = [thread_obj["id"] for thread_obj in result_threads]
+        threads = [self.get_thread(thread_id) for thread_id in thread_ids]
+        result_next_page_token: str | None = results.get("nextPageToken")
 
-        return ListMessagesResult(
-            messages=[self._get_message(message_id) for message_id in result_message_ids],
+        return ListThreadsResult(
+            threads=threads,
             next_page_token=result_next_page_token,
+        )
+
+    def get_thread(self, thread_id: str) -> Thread:
+        result = self._gmail_client.users().threads().get(userId="me", id=thread_id, format="full").execute()
+
+        output_messages: list[Message] = []
+        try:
+            result_messages = result["messages"]
+            for message_obj in result_messages:
+                message_id = message_obj["id"]
+                message_unix_epoch_ms: int = int(message_obj["internalDate"])
+                message_utc_timestamp: dt.datetime = dt.datetime.fromtimestamp(message_unix_epoch_ms / 1000, tz=dt.timezone.utc)
+                label_ids: list[str] = message_obj["labelIds"]
+
+                message_payload: dict = message_obj["payload"]
+                message_payload_headers = message_payload["headers"]
+                sender: str = next(h["value"] for h in message_payload_headers if h["name"] == "From")
+                subject: str | None = next((h["value"] for h in message_payload_headers if h["name"] == "Subject"), None)
+
+                message_payload_parts: list[dict] = message_payload.get("parts", [])
+                content_textonly_parts = [part for part in message_payload_parts if part["mimeType"] == "text/plain"]
+                content_base64_parts: list[str] = [part["body"]["data"] for part in content_textonly_parts if "data" in part["body"]]
+                converted_content: list[str] = [_safe_base64_decode_to_str(base64_str) or "UNREADABLE" for base64_str in content_base64_parts]
+                content: str = "\n".join(converted_content)
+                output_messages.append(
+                    Message(
+                        id=message_id,
+                        thread_id=thread_id,
+                        utc_timestamp=message_utc_timestamp,
+                        label_ids=label_ids,
+                        sender=sender,
+                        subject=subject,
+                        content=content,
+                    )
+                )
+        except Exception as e:
+            raise InternalException("An error occurred when reading a Gmail message") from e
+
+        return Thread(
+            id=thread_id,
+            messages=output_messages,
         )
 
     def add_label_to_message(
@@ -113,38 +152,6 @@ class NeppyGmailClient:
 
         return output
 
-    def _get_message(self, message_id: str) -> Message:
-        result = self._gmail_client.users().messages().get(userId="me", id=message_id, format="full").execute()
-
-        try:
-            thread_id: str = result["threadId"]
-            message_unix_epoch_ms: int = int(result["internalDate"])
-            message_utc_timestamp: dt.datetime = dt.datetime.fromtimestamp(message_unix_epoch_ms / 1000, tz=dt.timezone.utc)
-            label_ids: list[str] = result["labelIds"]
-
-            result_payload: dict = result["payload"]
-            result_payload_headers = result_payload["headers"]
-            sender: str = next(h["value"] for h in result_payload_headers if h["name"] == "From")
-            subject: str | None = next((h["value"] for h in result_payload_headers if h["name"] == "Subject"), None)
-
-            result_payload_parts: list[dict] = result_payload.get("parts", [])
-            content_textonly_parts = [part for part in result_payload_parts if part["mimeType"] == "text/plain"]
-            content_base64_parts: list[str] = [part["body"]["data"] for part in content_textonly_parts if "data" in part["body"]]
-            converted_content: list[str] = [_safe_base64_decode_to_str(base64_str) or "UNREADABLE" for base64_str in content_base64_parts]
-            content: str = "\n".join(converted_content)
-        except Exception as e:
-            raise InternalException("An error occurred when reading a Gmail message") from e
-
-        return Message(
-            id=message_id,
-            thread_id=thread_id,
-            utc_timestamp=message_utc_timestamp,
-            label_ids=label_ids,
-            sender=sender,
-            subject=subject,
-            content=content,
-        )
-
 
 def _safe_base64_decode_to_str(base64_str: str) -> str | None:
     try:
@@ -154,7 +161,7 @@ def _safe_base64_decode_to_str(base64_str: str) -> str | None:
         return None
 
 
-def _convert_list_messages_options_to_search_query(gso: ListMessagesOptions) -> str:
+def _convert_list_threads_options_to_search_query(gso: ListThreadsOptions) -> str:
     filters = []
     if gso.received_after is not None:
         unixSecondsTimestamp = int(gso.received_after.timestamp())

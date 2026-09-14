@@ -1,11 +1,12 @@
 """Neppy's Google integration with Gmail support."""
 
 from .client import NeppyGmailClient
-from .types import ListMessagesOptions, ListMessagesResult, Message
+from .types import ListThreadsOptions, ListThreadsResult, Message, Thread
 
 __all__ = [
     "NeppyGmailClient",
+    "ListThreadsOptions",
+    "ListThreadsResult",
     "Message",
-    "ListMessagesOptions",
-    "ListMessagesResult",
+    "Thread",
 ]
