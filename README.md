@@ -1,6 +1,6 @@
 # Neppy
 
-Nep's Personal Assistant - just-in-time creation, execution, and monitoring of custom agentic workflows.
+Nep's Personal Assistant - just-in-time creation and execution of custom agentic workflows.
 
 This tool is in-development and is not ready for others to use or contribute to.
 
