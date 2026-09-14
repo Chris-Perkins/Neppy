@@ -4,6 +4,7 @@ src/neppy.egg-info/
 venv/
 .DS_Store
 
-# Secrets
+# Local files
 __secrets__/
 __neppycache__/
+__neppystorage__/
