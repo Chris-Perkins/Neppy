@@ -1,5 +1,6 @@
 """Google Client with Gmail access."""
 
+from email.message import EmailMessage
 import base64
 import datetime as dt
 import json
@@ -13,9 +14,13 @@ from neppy.exceptions import InternalException
 from neppy.utils.caching import get_cached_value, set_cached_value
 import neppy.config
 
-from .types import ListMessagesOptions, ListMessagesResult, Message
+from .types import CreateDraftMessageResponse, Label, ListMessagesOptions, ListMessagesResult, Message
 
-_REQUIRED_SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
+_REQUIRED_SCOPES = [
+    "https://www.googleapis.com/auth/gmail.modify",
+    "https://www.googleapis.com/auth/gmail.send",
+    "https://www.googleapis.com/auth/gmail.compose",
+]
 _AUTH_CACHE_KEY = "auth/google"
 """Where cached auth credentials are stored"""
 
@@ -28,11 +33,7 @@ class NeppyGmailClient:
         google_credentials = _generate_google_credentials(_REQUIRED_SCOPES)
         self._gmail_client = build("gmail", "v1", credentials=google_credentials)
 
-    def list_messages(
-        self,
-        options: ListMessagesOptions | None = None,
-        page_token: str | None = None,
-    ) -> ListMessagesResult:
+    def list_messages(self, options: ListMessagesOptions | None = None, page_token: str | None = None) -> ListMessagesResult:
         """Returns Gmail messages matching the input parameters.
 
         Args:
@@ -53,6 +54,48 @@ class NeppyGmailClient:
             messages=[self._get_message(message_id) for message_id in result_message_ids],
             next_page_token=result_next_page_token,
         )
+
+    def add_label_to_message(self, message_id: str, label_name: str) -> None:
+        """Adds a label to the input message."""
+        label = self._get_or_create_label(label_name)
+        body = {"addLabelIds": [label.id]}
+        self._gmail_client.users().messages().modify(userId="me", id=message_id, body=body).execute()
+
+    def create_draft_message(self, thread_id: str, content: str) -> CreateDraftMessageResponse:
+        """Creates a draft message that can be sent later using ``send_draft_message``."""
+        mime_message = EmailMessage()
+        mime_message.set_content(content)
+
+        encoded_message = base64.urlsafe_b64encode(mime_message.as_bytes()).decode()
+        draft_body = {"message": {"threadId": thread_id, "raw": encoded_message}}
+        result = self._gmail_client.users().drafts().create(userId="me", body=draft_body).execute()
+        return CreateDraftMessageResponse(draft_message_id=result["id"])
+
+    def send_draft_message(self, draft_message_id: str) -> None:
+        """Sends the input draft message."""
+        self._gmail_client.users().drafts().send(userId="me", body={"id": draft_message_id}).execute()
+
+    def _get_or_create_label(self, label_name: str) -> Label:
+        """Finds a label by name, creating it if it doesn't exist, and returns its ID."""
+        labels = self._get_labels()
+        label_with_name = next((label for label in labels if label.name.lower() == label_name.lower()), None)
+        if label_with_name:
+            return label_with_name
+
+        label_body = {"name": label_name, "labelListVisibility": "labelShow", "messageListVisibility": "show"}
+        created_label = self._gmail_client.users().labels().create(userId="me", body=label_body).execute()
+        return created_label["id"]
+
+    def _get_labels(self) -> list[Label]:
+        output: list[Label] = []
+
+        label_results: list[dict] = self._gmail_client.users().labels().list(userId="me").execute()
+        for label_result in label_results:
+            label_id = label_result["id"]
+            label_name = label_result["name"]
+            output.append(Label(id=label_id, name=label_name))
+
+        return output
 
     def _get_message(self, message_id: str) -> Message:
         result = self._gmail_client.users().messages().get(userId="me", id=message_id, format="full").execute()

@@ -42,3 +42,14 @@ class Message:
     sender: str
     subject: str | None
     content: str
+
+
+@neppy_dataclass
+class CreateDraftMessageResponse:
+    draft_message_id: str
+
+
+@neppy_dataclass
+class Label:
+    id: str
+    name: str
