@@ -62,6 +62,7 @@ select = ["D", "I", "E", "F"]
 
 extend-ignore = [
     "D101", # Missing docstring in public class
+    "D102", # Missing docstring in public method
     "D103", # Missing docstring in public function
     "D105", # Missing docstring in magic method (e.g., __str__)
     "D107", # Missing docstring in __init__ (Google style docs them at the class level)
