@@ -1,14 +1,14 @@
 """Google Client with Gmail access."""
 
-from email.message import EmailMessage
+from email.mime.text import MIMEText
 import base64
 import datetime as dt
 import json
 
+from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials as GoogleOAuthCredentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
-from requests import Request
 
 from neppy.exceptions import InternalException
 from neppy.utils.caching import get_cached_value, set_cached_value
@@ -33,7 +33,12 @@ class NeppyGmailClient:
         google_credentials = _generate_google_credentials(_REQUIRED_SCOPES)
         self._gmail_client = build("gmail", "v1", credentials=google_credentials)
 
-    def list_messages(self, options: ListMessagesOptions | None = None, page_token: str | None = None) -> ListMessagesResult:
+    def list_messages(
+        self,
+        options: ListMessagesOptions | None = None,
+        *,
+        page_token: str | None = None,
+    ) -> ListMessagesResult:
         """Returns Gmail messages matching the input parameters.
 
         Args:
@@ -55,16 +60,27 @@ class NeppyGmailClient:
             next_page_token=result_next_page_token,
         )
 
-    def add_label_to_message(self, message_id: str, label_name: str) -> None:
+    def add_label_to_message(
+        self,
+        message_id: str,
+        label_name: str,
+    ) -> None:
         """Adds a label to the input message."""
         label = self._get_or_create_label(label_name)
         body = {"addLabelIds": [label.id]}
         self._gmail_client.users().messages().modify(userId="me", id=message_id, body=body).execute()
 
-    def create_draft_message(self, thread_id: str, content: str) -> CreateDraftMessageResponse:
+    def create_draft_message(
+        self,
+        thread_id: str,
+        content: str,
+        *,
+        recipient: str | None = None,
+    ) -> CreateDraftMessageResponse:
         """Creates a draft message that can be sent later using ``send_draft_message``."""
-        mime_message = EmailMessage()
-        mime_message.set_content(content)
+        mime_message = MIMEText(content, "html")
+        if recipient is not None:
+            mime_message["to"] = recipient
 
         encoded_message = base64.urlsafe_b64encode(mime_message.as_bytes()).decode()
         draft_body = {"message": {"threadId": thread_id, "raw": encoded_message}}

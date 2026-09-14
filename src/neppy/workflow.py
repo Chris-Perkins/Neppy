@@ -1,9 +1,7 @@
 """Defines workflows."""
 
-from sqlite3 import InternalError
-
-from neppy.integrations.filestorage import NeppyFilestorageClient
-from neppy.integrations.gmail import NeppyGmailClient
+from neppy.exceptions import InternalException
+from neppy.integrations import NeppyFilestorageClient, NeppyGmailClient, NeppyOllamaClient
 from neppy.utils.dataclasses import neppy_dataclass
 
 
@@ -11,6 +9,7 @@ from neppy.utils.dataclasses import neppy_dataclass
 class WorkflowContext:
     gmail_client: NeppyGmailClient
     filestorage_client: NeppyFilestorageClient
+    ollama_client: NeppyOllamaClient
 
 
 def run_workflow(ctx: WorkflowContext, workflow_code: str) -> None:
@@ -19,6 +18,6 @@ def run_workflow(ctx: WorkflowContext, workflow_code: str) -> None:
     exec(workflow_code, namespace)
 
     if "main" not in namespace:
-        raise InternalError("Workflow code must define a 'main(ctx)' function.")
+        raise InternalException("Workflow code must define a 'main(ctx)' function.")
 
     return namespace["main"](ctx)
