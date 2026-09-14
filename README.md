@@ -1,6 +1,8 @@
 # Neppy
 
-Nep's Personal AI Bot
+Nep's Personal Assistant - just-in-time creation, execution, and monitoring of custom agentic workflows.
+
+I use this to automatically respond to emails, track to-dos, etc.
 
 Inspired by [Handmade Cities](https://handmadecities.com/)
 
