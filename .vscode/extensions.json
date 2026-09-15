@@ -1,6 +1,8 @@
 {
     "recommendations": [
         "jcdj666.uv-run",
-        "charliermarsh.ruff"
+        "charliermarsh.ruff",
+        "detachhead.basedpyright",
+        "ms-python.vscode-python-envs"
     ]
 }
