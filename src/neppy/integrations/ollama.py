@@ -16,24 +16,26 @@ class NeppyOllamaClient:
         self.default_model = default_model
 
     @overload
-    def run(
+    def chat(
         self,
         prompt: list[Message],
-        response_type: None,
+        *,
         model_override: str | None = None,
     ) -> str: ...
 
     @overload
-    def run[T: BaseModel](
+    def chat[T: BaseModel](
         self,
         prompt: list[Message],
+        *,
         response_type: type[T],
         model_override: str | None = None,
     ) -> T: ...
 
-    def run[T: BaseModel](
+    def chat[T: BaseModel](
         self,
         prompt: list[Message],
+        *,
         response_type: type[T] | None = None,
         model_override: str | None = None,
     ) -> T | str:
