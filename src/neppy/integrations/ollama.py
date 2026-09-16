@@ -48,6 +48,14 @@ class NeppyOllamaClient:
 
         Returns:
             the result of the LLM, casted to response_type (if set) or a string otherwise.
+
+        Example:
+            ```py
+            result = ollama_client.chat([
+                Message(role="system", content="Help the user with their request. Answer concisely and truthfully."),
+                Message(role="user", content="Is Coca-Cola good for me?"),
+            ])
+            ```
         """
         model_to_use = model_override or self.default_model
         format_schema = response_type.model_json_schema() if response_type is not None else None
