@@ -12,4 +12,5 @@ default_ollama_model = os.environ.get("DEFAULT_OLLAMA_MODEL") or "gemma4:12b"
 
 # Storage
 storage_dir_path = os.environ.get("STORAGE_PATH") or f"{os.getcwd()}/__neppystorage__"
+generated_workflows_dir_path = os.environ.get("WORKFLOWS_PATH") or "storage_dir_path/workflows"
 cache_dir_path: str = os.environ.get("CACHE_DIR_PATH") or f"{storage_dir_path}/__cache__"
