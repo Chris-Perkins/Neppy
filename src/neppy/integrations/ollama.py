@@ -10,6 +10,8 @@ from neppy.exceptions import InternalException
 
 
 class NeppyOllamaClient:
+    """Enables usage of of local LLMs."""
+
     def __init__(self, default_model: str):
         self.default_model = default_model
 
@@ -35,6 +37,16 @@ class NeppyOllamaClient:
         response_type: type[T] | None = None,
         model_override: str | None = None,
     ) -> T | str:
+        """Run the input prompt against the input model.
+
+        Args:
+            prompt (list[Message]): The prompt to run through the LLM.
+            response_type (BaseModel type, optional): The type of class that should be returned. If not specified, a string is returned.
+            model_override (str, optional): The LLM model to execute on. If not specified, the client's `default_model` will be used.
+
+        Returns:
+            the result of the LLM, casted to response_type (if set) or a string otherwise.
+        """
         model_to_use = model_override or self.default_model
         format_schema = response_type.model_json_schema() if response_type is not None else None
         response = chat(
