@@ -6,13 +6,13 @@ from neppy.utils.dataclasses import neppy_dataclass
 
 
 @neppy_dataclass
-class WorkflowContext:
+class ExecutionContext:
     gmail_client: NeppyGmailClient
     filestorage_client: NeppyFilestorageClient
     ollama_client: NeppyOllamaClient
 
 
-def run_workflow(ctx: WorkflowContext, workflow_code: str) -> None:
+def run_workflow(ctx: ExecutionContext, workflow_code: str) -> None:
     """Run the input workflow using the input context."""
     namespace = {}
     exec(workflow_code, namespace)
