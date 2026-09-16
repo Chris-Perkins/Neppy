@@ -1,11 +1,10 @@
 from dataclasses import fields
 from pathlib import Path
 import inspect
+import uuid
 
 from ollama import Message
-from pydantic import BaseModel
 
-from neppy.exceptions import InternalException
 from neppy.utils.dataclasses import neppy_dataclass
 from neppy.workflow import ExecutionContext
 import neppy.config
@@ -35,16 +34,11 @@ def main(ctx: ExecutionContext, **kwargs) -> None:
     workflow_storage_path = Path(neppy.config.generated_workflows_dir_path)
     prompt = _generate_workflow_generation_prompt(user_request)
 
-    class CodeGenerationResponseType(BaseModel):
-        file_name: str
-        python_code: str
+    generated_code = ctx.ollama_client.chat(prompt=prompt)
 
-    code_generation_result = ctx.ollama_client.chat(prompt=prompt, response_type=CodeGenerationResponseType)
-    suggested_storage_location = workflow_storage_path.joinpath(code_generation_result.file_name)
-    if suggested_storage_location.exists():
-        raise InternalException(f"Agent wants to save workflow in a file that already exists: {suggested_storage_location}")
+    suggested_storage_location = workflow_storage_path.joinpath(f"{uuid.uuid4()}.py")
     suggested_storage_location.parent.mkdir(parents=True, exist_ok=True)
-    suggested_storage_location.write_text(code_generation_result.python_code)
+    suggested_storage_location.write_text(generated_code)
 
 
 def _generate_workflow_generation_prompt(user_request: str) -> list[Message]:
@@ -100,10 +94,9 @@ Generate a Python script that does the following: {user_request}
 def _generate_execution_context_instructions() -> str:
     execution_context_instructional_elements = [
         _PseudoHTMLElement(
-            "property",
+            field.name,
             children=[
-                _PseudoHTMLElement("name", content=field.name),
-                _PseudoHTMLElement("members", children=_generate_html_elements_for_class(field.type)),  # pyright: ignore[reportArgumentType] - this is always a Type, but Python be tweaking.
+                _PseudoHTMLElement("functions", children=_generate_html_elements_for_class(field.type)),  # pyright: ignore[reportArgumentType] - this is always a Type, but Python be tweaking.
             ],
         )
         for field in fields(ExecutionContext)
@@ -121,5 +114,5 @@ def _generate_html_elements_for_class(class_type: type) -> list[_PseudoHTMLEleme
         is_private_fn = name.startswith("_")
         if is_private_fn:
             continue
-        output.append(_PseudoHTMLElement(label="function", children=[_PseudoHTMLElement("name", content=name), _PseudoHTMLElement(label="documentation", content=inspect.getdoc(fn))]))
+        output.append(_PseudoHTMLElement(label=name, content=inspect.getdoc(fn)))
     return output
