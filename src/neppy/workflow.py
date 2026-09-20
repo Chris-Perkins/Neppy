@@ -3,7 +3,7 @@
 from neppy.exceptions import InternalException
 from neppy.integrations.filestorage import NeppyFilestorageClient
 from neppy.integrations.gmail import NeppyGmailClient
-from neppy.integrations.ollama import NeppyOllamaClient
+from neppy.integrations.llms import NeppyLLMClient
 from neppy.integrations.putio import NeppyPutIOClient
 from neppy.utils.dataclasses import neppy_dataclass
 
@@ -12,7 +12,7 @@ from neppy.utils.dataclasses import neppy_dataclass
 class ExecutionContext:
     gmail_client: NeppyGmailClient
     filestorage_client: NeppyFilestorageClient
-    ollama_client: NeppyOllamaClient
+    ollama_client: NeppyLLMClient
     putio_client: NeppyPutIOClient
 
 

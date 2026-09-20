@@ -9,7 +9,7 @@ from pydantic.types import T
 from neppy.exceptions import InternalException
 
 
-class NeppyOllamaClient:
+class NeppyLLMClient:
     """Enables usage of of local LLMs."""
 
     def __init__(self, default_model: str):
