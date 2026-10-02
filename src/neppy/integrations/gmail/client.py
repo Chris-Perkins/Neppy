@@ -4,7 +4,9 @@ from email.mime.text import MIMEText
 import base64
 import datetime as dt
 import json
+import logging
 
+from google.auth.exceptions import RefreshError
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials as GoogleOAuthCredentials
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -188,13 +190,17 @@ def _generate_google_credentials(required_scopes: list[str]) -> GoogleOAuthCrede
 
     auth_token_cache_key = "google/auth-token.json"
     cached_auth_token_token = get_cached_value(auth_token_cache_key)
-    if cached_auth_token_token is not None:
+    if cached_auth_token_token:
         json_token = json.loads(cached_auth_token_token)
         creds = GoogleOAuthCredentials.from_authorized_user_info(json_token, scopes=_REQUIRED_SCOPES)
 
-    if creds and creds.refresh and creds.expired:
-        creds.refresh(Request())
-    elif not creds or not creds.valid:
+    if creds and creds.refresh_token and creds.expired:
+        try:
+            creds.refresh(Request())
+        except RefreshError:
+            logging.info("Token refresh failed. Will generate a new token.")
+
+    if not creds or not creds.valid:
         flow = InstalledAppFlow.from_client_secrets_file(neppy.config.google_secret_file_path, required_scopes)
         creds = flow.run_local_server(port=0)
 
