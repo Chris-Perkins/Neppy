@@ -12,7 +12,8 @@
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
             "env": {
-                "PYTHONPATH": "${workspaceFolder}/src"
+                "PYTHONPATH": "${workspaceFolder}/src",
+                "HF_HUB_DISABLE_PROGRESS_BARS": "1"
             },
         },
     ]

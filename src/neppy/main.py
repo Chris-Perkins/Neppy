@@ -4,11 +4,11 @@ from pathlib import Path
 
 from neppy.integrations.filestorage import NeppyFilestorageClient
 from neppy.integrations.gmail import NeppyGmailClient
+from neppy.integrations.jev import NeppyJevClient
 from neppy.integrations.llms import NeppyLLMClient
 from neppy.integrations.putio import NeppyPutIOClient
 from neppy.workflow import ExecutionContext
 import neppy.config
-import neppy.workflows.workflow_generator
 
 
 def main():
@@ -23,12 +23,13 @@ def main():
         putio_username=neppy.config.putio_username,
         putio_password=neppy.config.putio_password,
     )
-
+    jev_client = NeppyJevClient()
     ctx = ExecutionContext(
         gmail_client=gmail_client,
         filestorage_client=filestorage_client,
         ollama_client=ollama_client,
         putio_client=putio_client,
+        jev_client=jev_client,
     )
     ...
 

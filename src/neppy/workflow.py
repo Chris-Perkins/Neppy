@@ -3,6 +3,7 @@
 from neppy.exceptions import InternalException
 from neppy.integrations.filestorage import NeppyFilestorageClient
 from neppy.integrations.gmail import NeppyGmailClient
+from neppy.integrations.jev import NeppyJevClient
 from neppy.integrations.llms import NeppyLLMClient
 from neppy.integrations.putio import NeppyPutIOClient
 from neppy.utils.dataclasses import neppy_dataclass
@@ -14,6 +15,7 @@ class ExecutionContext:
     filestorage_client: NeppyFilestorageClient
     ollama_client: NeppyLLMClient
     putio_client: NeppyPutIOClient
+    jev_client: NeppyJevClient
 
 
 def run_workflow(ctx: ExecutionContext, workflow_code: str) -> None:
